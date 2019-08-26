@@ -26,7 +26,7 @@ tasks.withType<KotlinCompile> {
 }
 
 application {
-    mainClassName = "Main"
+    mainClassName = "com.github.brewin.gdal_contourf.GdalContourF"
 }
 
 /*tasks.withType<ShadowJar> {

@@ -1,4 +1,4 @@
-package algorithm
+package com.github.brewin.gdal_contourf.algorithm
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -18,7 +18,7 @@ import kotlin.math.floor
  * @param grid a 2d grid of data.
  * @param geoTransform a 6-element GeoTransform in GDAL order. (c,a,b,f,d,e)
  */
-class MarchingSquares(
+internal class MarchingSquares(
     grid: Array<DoubleArray>,
     private val geoTransform: DoubleArray
 ) {

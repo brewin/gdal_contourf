@@ -1,6 +1,6 @@
-package algorithm
+package com.github.brewin.gdal_contourf.algorithm
 
-class AdjacencyMap {
+internal class AdjacencyMap {
 
     private var firstIndex = 0
     private val segments = arrayListOf<Segment?>()

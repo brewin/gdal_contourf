@@ -1,12 +1,12 @@
-package algorithm
+package com.github.brewin.gdal_contourf.algorithm
 
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-data class Point(val x: Double, val y: Double)
+internal data class Point(val x: Double, val y: Double)
 
-data class Segment(val start: Point, val end: Point) {
+internal data class Segment(val start: Point, val end: Point) {
 
     // https://rosettacode.org/wiki/Ray-casting_algorithm
     operator fun contains(point: Point): Boolean = when {
@@ -37,7 +37,7 @@ data class Segment(val start: Point, val end: Point) {
     }
 }
 
-data class LinearRing(val points: List<Point>) {
+internal data class LinearRing(val points: List<Point>) {
 
     val segments
         get() = points.zipWithNext { a, b -> Segment(a, b) }
@@ -47,7 +47,7 @@ data class LinearRing(val points: List<Point>) {
         get() = segments.sumByDouble { (a, b) -> (b.x - a.x) * (b.y + a.y) } > 0
 }
 
-data class Polygon(
+internal data class Polygon(
     val exteriorRing: LinearRing,
     val interiorRings: ArrayList<LinearRing> = arrayListOf()
 ) {

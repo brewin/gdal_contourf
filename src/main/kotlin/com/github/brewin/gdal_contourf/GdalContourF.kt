@@ -1,5 +1,7 @@
-import algorithm.MarchingSquares
-import algorithm.Polygon
+package com.github.brewin.gdal_contourf
+
+import com.github.brewin.gdal_contourf.algorithm.MarchingSquares
+import com.github.brewin.gdal_contourf.algorithm.Polygon
 import kotlinx.coroutines.runBlocking
 import org.gdal.gdal.Band
 import org.gdal.gdal.Dataset
@@ -17,7 +19,7 @@ import java.io.File
 import java.util.*
 import kotlin.system.exitProcess
 
-object Main {
+object GdalContourF {
 
     private fun openRaster(filePath: String): Dataset {
         val prefix = if (filePath.endsWith(".gz")) "/vsigzip/" else ""
@@ -90,7 +92,10 @@ object Main {
             .forEachIndexed { i, levelPolygons ->
                 println("OGR-ifying level ${levels[i]}...")
 
-                val levelMultiPolygon = polygonsToOgrMultiPolygon(levelPolygons)
+                val levelMultiPolygon =
+                    polygonsToOgrMultiPolygon(
+                        levelPolygons
+                    )
 
                 if (!levelMultiPolygon.IsEmpty()) {
                     val feature = Feature(layer.GetLayerDefn())
@@ -108,7 +113,7 @@ object Main {
         outDataSource.delete()
     }
 
-    private suspend fun prepare(
+    suspend fun rasterToVector(
         inputRasterPath: String,
         band: Int,
         levels: List<Double>,
@@ -118,9 +123,7 @@ object Main {
         outputOptions: List<String>,
         outputPath: String
     ) {
-        if (simplification !in 0..90) {
-            throw IllegalArgumentException("Error: simplification must be between 0 and 90")
-        }
+        require(simplification in 0..90) { "Error: simplification must be between 0 and 90" }
 
         gdal.AllRegister()
         gdal.UseExceptions()
@@ -132,13 +135,27 @@ object Main {
         val translateArgs = "-of VRT -r cubicspline -outsize ${100 - simplification}% 0"
         val reprojectedDataset = gdal.Translate(
             "/vsimem/reprojected.vrt",
-            reproject(openRaster(inputRasterPath), outSrs),
+            reproject(
+                openRaster(
+                    inputRasterPath
+                ), outSrs
+            ),
             TranslateOptions(gdal.ParseCommandLine(translateArgs))
         )
-        val grid = bandTo2dArray(reprojectedDataset.GetRasterBand(band))
+        val grid = bandTo2dArray(
+            reprojectedDataset.GetRasterBand(band)
+        )
         val geoTransform = reprojectedDataset.GetGeoTransform()
 
-        process(grid, levels, geoTransform, outSrs, outputFormat, outputOptions, outputPath)
+        process(
+            grid,
+            levels,
+            geoTransform,
+            outSrs,
+            outputFormat,
+            outputOptions,
+            outputPath
+        )
     }
 
     private fun mapArgs(args: Array<String>): Map<String, List<String>> =
@@ -175,7 +192,16 @@ object Main {
         //arrayOf(raster, band, levels, simp, epsg, format, options, out).map(::println)
 
         runBlocking {
-            prepare(raster, band, levels, simp, epsg, format, options, out)
+            rasterToVector(
+                raster,
+                band,
+                levels,
+                simp,
+                epsg,
+                format,
+                options,
+                out
+            )
         }
     }
 }
