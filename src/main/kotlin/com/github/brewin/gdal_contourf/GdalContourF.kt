@@ -3,49 +3,18 @@ package com.github.brewin.gdal_contourf
 import com.github.brewin.gdal_contourf.algorithm.MarchingSquares
 import com.github.brewin.gdal_contourf.algorithm.Polygon
 import kotlinx.coroutines.runBlocking
-import org.gdal.gdal.Band
-import org.gdal.gdal.Dataset
 import org.gdal.gdal.TranslateOptions
 import org.gdal.gdal.gdal
-import org.gdal.gdalconst.gdalconstConstants.GRA_Bilinear
-import org.gdal.gdalconst.gdalconstConstants.OF_READONLY
 import org.gdal.ogr.Feature
 import org.gdal.ogr.FieldDefn
 import org.gdal.ogr.Geometry
 import org.gdal.ogr.ogr
 import org.gdal.ogr.ogrConstants.*
 import org.gdal.osr.SpatialReference
-import java.io.File
 import java.util.*
 import kotlin.system.exitProcess
 
 object GdalContourF {
-
-    private fun openRaster(filePath: String): Dataset {
-        val prefix = if (filePath.endsWith(".gz")) "/vsigzip/" else ""
-        return gdal.OpenEx("$prefix${File(filePath).absolutePath}", OF_READONLY.toLong())
-    }
-
-    private fun reproject(dataset: Dataset, srs: SpatialReference): Dataset =
-        gdal.AutoCreateWarpedVRT(
-            dataset,
-            dataset.GetProjectionRef(),
-            srs.ExportToWkt(),
-            GRA_Bilinear
-        )
-
-    private fun bandTo2dArray(band: Band): Array<DoubleArray> {
-        // Read data into 1d array.
-        val dataArray = DoubleArray(band.xSize * band.ySize)
-        band.ReadRaster(0, 0, band.xSize, band.ySize, dataArray)
-
-        // Convert 1d array to 2d array.
-        return Array(band.xSize) { x ->
-            DoubleArray(band.ySize) { y ->
-                dataArray[y * band.xSize + x]
-            }
-        }
-    }
 
     private fun polygonsToOgrMultiPolygon(polygons: List<Polygon>): Geometry {
         val multiPolygon = Geometry(wkbMultiPolygon)
@@ -91,12 +60,7 @@ object GdalContourF {
             .contour(levels.toDoubleArray())
             .forEachIndexed { i, levelPolygons ->
                 println("OGR-ifying level ${levels[i]}...")
-
-                val levelMultiPolygon =
-                    polygonsToOgrMultiPolygon(
-                        levelPolygons
-                    )
-
+                val levelMultiPolygon = polygonsToOgrMultiPolygon(levelPolygons)
                 if (!levelMultiPolygon.IsEmpty()) {
                     val feature = Feature(layer.GetLayerDefn())
                         .apply {
@@ -115,6 +79,7 @@ object GdalContourF {
 
     suspend fun rasterToVector(
         inputRasterPath: String,
+        gzipped: Boolean,
         band: Int,
         levels: List<Double>,
         simplification: Int,
@@ -135,27 +100,13 @@ object GdalContourF {
         val translateArgs = "-of VRT -r cubicspline -outsize ${100 - simplification}% 0"
         val reprojectedDataset = gdal.Translate(
             "/vsimem/reprojected.vrt",
-            reproject(
-                openRaster(
-                    inputRasterPath
-                ), outSrs
-            ),
+            GdalUtil.reproject(GdalUtil.openRaster(inputRasterPath, gzipped), outSrs),
             TranslateOptions(gdal.ParseCommandLine(translateArgs))
         )
-        val grid = bandTo2dArray(
-            reprojectedDataset.GetRasterBand(band)
-        )
+        val grid = GdalUtil.bandTo2dDoubleArray(reprojectedDataset.GetRasterBand(band))
         val geoTransform = reprojectedDataset.GetGeoTransform()
 
-        process(
-            grid,
-            levels,
-            geoTransform,
-            outSrs,
-            outputFormat,
-            outputOptions,
-            outputPath
-        )
+        process(grid, levels, geoTransform, outSrs, outputFormat, outputOptions, outputPath)
     }
 
     private fun mapArgs(args: Array<String>): Map<String, List<String>> =
@@ -178,6 +129,7 @@ object GdalContourF {
 
         val raster = a["--in"]?.singleOrNull()
             ?: throw IllegalArgumentException("--in is required (--in raster.tif)")
+        val gzipped = a["--gzipped"]?.singleOrNull()?.toBoolean() ?: false
         val band = a["--band"]?.singleOrNull()?.toIntOrNull() ?: 1
         val levels = a["--levels"]?.map(String::toDouble)
             ?: throw IllegalArgumentException("--levels is required (--levels 0 50 100)")
@@ -192,16 +144,7 @@ object GdalContourF {
         //arrayOf(raster, band, levels, simp, epsg, format, options, out).map(::println)
 
         runBlocking {
-            rasterToVector(
-                raster,
-                band,
-                levels,
-                simp,
-                epsg,
-                format,
-                options,
-                out
-            )
+            rasterToVector(raster, gzipped, band, levels, simp, epsg, format, options, out)
         }
     }
 }

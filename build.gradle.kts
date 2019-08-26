@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     application
+    `java-library`
     kotlin("jvm") version "1.3.50"
     id("com.github.johnrengelman.shadow") version "5.1.0"
     id("com.github.ben-manes.versions") version "0.22.0"
@@ -17,8 +18,8 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.0")
-    compile("org.gdal:gdal:2.4.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.0")
+    implementation("org.gdal:gdal:2.4.0")
 }
 
 tasks.withType<KotlinCompile> {
