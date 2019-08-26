@@ -3,7 +3,7 @@ Generates filled contours (polygons) from a raster dataset. It runs on the
 JVM and is optimized for speed. A large raster can typically be processed in a 
 matter of seconds. It uses [GDAL](https://gdal.org/) to read raster files and 
 write vector files. Contours are generated using the 
-[Marching Squares](https://en.wikipedia.org/wiki/Marching_squares) com.github.brewin.gdal_contourf.algorithm.
+[Marching Squares](https://en.wikipedia.org/wiki/Marching_squares) algorithm.
 
 Note that as of GDAL v2.4.0, 
 [gdal_contour](https://gdal.org/programs/gdal_contour.html) can produce 
