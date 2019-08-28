@@ -119,9 +119,9 @@ object GdalContourF {
     fun main(args: Array<String>) {
         if (args.isEmpty()) {
             println("Usage:")
-            println("java -jar gdal_contourf.jar --in raster.tif --band 1 \\")
+            println("java -jar gdal_contourf-v1.1-all.jar --in input.tif --band 1 \\")
             println("   --levels 0 50 100 --simplification 30 --epsg 4326 \\")
-            println("   --format MBTile --options MAXZOOM=7 --out out.mbtiles")
+            println("   --format MBTile --options MAXZOOM=7 --out output.mbtiles")
             exitProcess(1)
         }
 
