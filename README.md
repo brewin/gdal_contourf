@@ -12,7 +12,7 @@ polygons using the -p option, but it is very slow.
 #### Requirements
 - Java
 - GDAL 
-- GDAL Java bindings (install the gdal-java package on Debian/Ubuntu and Fedora)
+- GDAL Java bindings (libgdal-java on Debian/Ubuntu, gdal-java on Fedora/Centos)
 
 #### Building
 Make sure the GDAL version in build.gradle.kts matches the system version. (ie. 2.4.0)
