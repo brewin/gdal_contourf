@@ -22,7 +22,7 @@ Make sure the GDAL version in build.gradle.kts matches the system version. (ie. 
 #### Usage
 It can be used as a Java library or run from the command line:
 
-    java -jar gdal_contourf.jar --in input.tif --band 1 \
+    java -jar gdal_contourf-<version>-all.jar --in input.tif --band 1 \
         --levels 0 50 100 150 --simplification 30 --epsg 4326 \
         --format GeoJSON --out output.geojson
         
