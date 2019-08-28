@@ -1,5 +1,5 @@
 ## gdal_contourf
-Generates filled contours (polygons) from a raster dataset. It runs on the 
+Generates filled contours (polygons) from raster data. It runs on the 
 JVM and is optimized for speed. A large raster can typically be processed in a 
 matter of seconds. It uses [GDAL](https://gdal.org/) to read raster files and 
 write vector files. Contours are generated using the 
@@ -22,10 +22,10 @@ Make sure the GDAL version in build.gradle.kts matches the system version. (ie. 
 #### Usage
 It can be used as a Java library or run from the command line:
 
-    java -jar gdal_contourf.jar --in raster.tif --band 1 \
-        --levels 0,50,100,150 --simplification 30 --epsg 4326 \
-        --format GeoJSON --out hello.geojson
+    java -jar gdal_contourf.jar --in input.tif --band 1 \
+        --levels 0 50 100 150 --simplification 30 --epsg 4326 \
+        --format GeoJSON --out output.geojson
         
 #### Disclaimer
 This is not well-tested and probably never will be. It works for my use-case. 
-Accuracy not guaranteed.
+Correctness not guaranteed.

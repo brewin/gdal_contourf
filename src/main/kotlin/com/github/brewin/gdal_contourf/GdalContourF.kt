@@ -120,7 +120,7 @@ object GdalContourF {
         if (args.isEmpty()) {
             println("Usage:")
             println("java -jar gdal_contourf.jar --in raster.tif --band 1 \\")
-            println("   --levels 0,50,100 --simplification 30 --epsg 4326 \\")
+            println("   --levels 0 50 100 --simplification 30 --epsg 4326 \\")
             println("   --format MBTile --options MAXZOOM=7 --out out.mbtiles")
             exitProcess(1)
         }
