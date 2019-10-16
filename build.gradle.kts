@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "com.github.brewin"
-version = "1.2"
+version = "1.0"
 
 repositories {
     jcenter()
