@@ -20,9 +20,21 @@ Make sure the GDAL version in build.gradle.kts matches the system version. (ie. 
     ./gradlew shadowJar
 
 #### Usage
-It can be used as a Java library or run from the command line:
+It can be used as a library with Gradle:
 
-    java -jar gdal_contourf-<version>-all.jar --in input.tif --band 1 \
+    allprojects {
+        repositories {
+            jcenter()
+            maven { url "https://jitpack.io" }
+        }
+    }
+    dependencies {
+        implementation 'com.github.brewin:gdal_contourf:1.0.1'
+    }
+    
+Or run from the command line:
+
+    java -jar gdal_contourf-1.0.1-all.jar --in input.tif --band 1 \
         --levels 0 50 100 150 --simplification 30 --epsg 4326 \
         --format GeoJSON --out output.geojson
         
