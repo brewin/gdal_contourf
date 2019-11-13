@@ -3,6 +3,7 @@ package com.github.brewin.gdal_contourf
 import com.github.brewin.gdal_contourf.algorithm.MarchingSquares
 import com.github.brewin.gdal_contourf.algorithm.Polygon
 import kotlinx.coroutines.runBlocking
+import org.gdal.gdal.Dataset
 import org.gdal.gdal.TranslateOptions
 import org.gdal.gdal.gdal
 import org.gdal.ogr.Feature
@@ -15,6 +16,13 @@ import java.util.*
 import kotlin.system.exitProcess
 
 object GdalContourF {
+
+    init {
+        gdal.AllRegister()
+        gdal.UseExceptions()
+        ogr.RegisterAll()
+        ogr.UseExceptions()
+    }
 
     private fun polygonsToOgrMultiPolygon(polygons: List<Polygon>): Geometry {
         val multiPolygon = Geometry(wkbMultiPolygon)
@@ -78,8 +86,7 @@ object GdalContourF {
     }
 
     suspend fun rasterToVector(
-        inputRasterPath: String,
-        gzipped: Boolean,
+        inputRaster: Dataset,
         band: Int,
         levels: List<Double>,
         simplification: Int,
@@ -90,23 +97,41 @@ object GdalContourF {
     ) {
         require(simplification in 0..90) { "Error: simplification must be between 0 and 90" }
 
-        gdal.AllRegister()
-        gdal.UseExceptions()
-        ogr.RegisterAll()
-        ogr.UseExceptions()
-
         val outSrs = SpatialReference()
             .apply { ImportFromEPSG(outputEpsgId) }
         val translateArgs = "-of VRT -r cubicspline -outsize ${100 - simplification}% 0"
         val reprojectedDataset = gdal.Translate(
             "/vsimem/reprojected.vrt",
-            GdalUtil.reproject(GdalUtil.openRaster(inputRasterPath, gzipped), outSrs),
+            GdalUtil.reproject(inputRaster, outSrs),
             TranslateOptions(gdal.ParseCommandLine(translateArgs))
         )
         val grid = GdalUtil.bandTo2dDoubleArray(reprojectedDataset.GetRasterBand(band))
         val geoTransform = reprojectedDataset.GetGeoTransform()
 
         process(grid, levels, geoTransform, outSrs, outputFormat, outputOptions, outputPath)
+    }
+
+    suspend fun rasterToVector(
+        inputRasterPath: String,
+        gzipped: Boolean,
+        band: Int,
+        levels: List<Double>,
+        simplification: Int,
+        outputEpsgId: Int,
+        outputFormat: String,
+        outputOptions: List<String>,
+        outputPath: String
+    ) {
+        rasterToVector(
+            GdalUtil.openRaster(inputRasterPath, gzipped),
+            band,
+            levels,
+            simplification,
+            outputEpsgId,
+            outputFormat,
+            outputOptions,
+            outputPath
+        )
     }
 
     private fun mapArgs(args: Array<String>): Map<String, List<String>> =

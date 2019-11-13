@@ -7,12 +7,19 @@ import org.gdal.gdalconst.gdalconstConstants
 import org.gdal.osr.SpatialReference
 import java.io.File
 
-object GdalUtil {
+internal object GdalUtil {
 
     fun openRaster(filePath: String, gzipped: Boolean): Dataset {
         return gdal.OpenEx(
             "${if (gzipped) "/vsigzip/" else ""}${File(filePath).absolutePath}",
             gdalconstConstants.OF_READONLY.toLong()
+        )
+    }
+
+    fun openVector(filePath: String, gzipped: Boolean): Dataset {
+        return gdal.OpenEx(
+            "${if (gzipped) "/vsigzip/" else ""}${File(filePath).absolutePath}",
+            gdalconstConstants.OF_VECTOR.toLong()
         )
     }
 
