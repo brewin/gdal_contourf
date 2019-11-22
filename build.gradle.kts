@@ -4,13 +4,13 @@ plugins {
     //application
     `java-library`
     maven
-    kotlin("jvm") version "1.3.50"
+    kotlin("jvm") version "1.3.60"
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("com.github.ben-manes.versions") version "0.27.0"
 }
 
 group = "com.github.brewin"
-version = "1.0.2"
+version = "1.0.3"
 
 repositories {
     jcenter()
@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2-1.3.60")
     api("org.gdal:gdal:2.4.0")
 }
 

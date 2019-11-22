@@ -6,10 +6,7 @@ import kotlinx.coroutines.runBlocking
 import org.gdal.gdal.Dataset
 import org.gdal.gdal.TranslateOptions
 import org.gdal.gdal.gdal
-import org.gdal.ogr.Feature
-import org.gdal.ogr.FieldDefn
-import org.gdal.ogr.Geometry
-import org.gdal.ogr.ogr
+import org.gdal.ogr.*
 import org.gdal.ogr.ogrConstants.*
 import org.gdal.osr.SpatialReference
 import java.util.*
@@ -51,16 +48,12 @@ object GdalContourF {
         grid: Array<DoubleArray>,
         levels: List<Double>,
         geoTransform: DoubleArray,
-        outSrs: SpatialReference,
-        outputFormat: String,
-        outputOptions: List<String>,
-        outFilePath: String
-    ) {
+        outSrs: SpatialReference
+    ): DataSource {
         val layerName = "levels"
         val featureName = "level"
 
-        val outDataSource = ogr.GetDriverByName(outputFormat)
-            .CreateDataSource(outFilePath, Vector(outputOptions))
+        val outDataSource = ogr.GetDriverByName("Memory").CreateDataSource("")
         val layer = outDataSource.CreateLayer(layerName, outSrs, wkbMultiPolygon)
             .apply { CreateField(FieldDefn(featureName, OFTReal)) }
 
@@ -80,9 +73,7 @@ object GdalContourF {
                 }
             }
 
-        // Must explicitly destroy output data source to write the whole file.
-        println("Writing vector file...")
-        outDataSource.delete()
+        return outDataSource
     }
 
     suspend fun rasterToVector(
@@ -90,12 +81,9 @@ object GdalContourF {
         band: Int,
         levels: List<Double>,
         simplification: Int,
-        outputEpsgId: Int,
-        outputFormat: String,
-        outputOptions: List<String>,
-        outputPath: String
-    ) {
-        require(simplification in 0..90) { "Error: simplification must be between 0 and 90" }
+        outputEpsgId: Int
+    ): DataSource {
+        require(simplification in 0..99) { "Error: simplification must be between 0 and 99" }
 
         val outSrs = SpatialReference()
             .apply { ImportFromEPSG(outputEpsgId) }
@@ -108,7 +96,7 @@ object GdalContourF {
         val grid = GdalUtil.bandTo2dDoubleArray(reprojectedDataset.GetRasterBand(band))
         val geoTransform = reprojectedDataset.GetGeoTransform()
 
-        process(grid, levels, geoTransform, outSrs, outputFormat, outputOptions, outputPath)
+        return process(grid, levels, geoTransform, outSrs)
     }
 
     suspend fun rasterToVector(
@@ -122,15 +110,32 @@ object GdalContourF {
         outputOptions: List<String>,
         outputPath: String
     ) {
-        rasterToVector(
+        val outputDataSource = rasterToVector(
             GdalUtil.openRaster(inputRasterPath, gzipped),
             band,
             levels,
             simplification,
-            outputEpsgId,
-            outputFormat,
-            outputOptions,
-            outputPath
+            outputEpsgId
+        )
+        ogr.GetDriverByName(outputFormat)
+            .CopyDataSource(outputDataSource, outputPath, Vector(outputOptions))
+            .delete()
+    }
+
+    suspend fun rasterToVector(
+        inputRasterPath: String,
+        gzipped: Boolean,
+        band: Int,
+        levels: List<Double>,
+        simplification: Int,
+        outputEpsgId: Int
+    ): DataSource {
+        return rasterToVector(
+            GdalUtil.openRaster(inputRasterPath, gzipped),
+            band,
+            levels,
+            simplification,
+            outputEpsgId
         )
     }
 
