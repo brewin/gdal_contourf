@@ -100,6 +100,28 @@ object GdalContourF {
     }
 
     suspend fun rasterToVector(
+        inputRaster: Dataset,
+        band: Int,
+        levels: List<Double>,
+        simplification: Int,
+        outputEpsgId: Int,
+        outputFormat: String,
+        outputOptions: List<String>,
+        outputPath: String
+    ) {
+        val outputDataSource = rasterToVector(
+            inputRaster,
+            band,
+            levels,
+            simplification,
+            outputEpsgId
+        )
+        ogr.GetDriverByName(outputFormat)
+            .CopyDataSource(outputDataSource, outputPath, Vector(outputOptions))
+            .delete()
+    }
+
+    suspend fun rasterToVector(
         inputRasterPath: String,
         gzipped: Boolean,
         band: Int,
