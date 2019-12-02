@@ -3,9 +3,59 @@ package com.github.brewin.gdal_contourf.algorithm
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import org.gdal.ogr.Geometry
+import org.gdal.ogr.ogr
+import org.gdal.ogr.ogrConstants.*
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
+
+data class Point(val x: Double, val y: Double) : Geometry(wkbPoint) {
+
+    init {
+        AddPoint(x, y)
+    }
+}
+
+data class Segment(val a: Point, val b: Point) : Geometry(wkbLineString) {
+
+    init {
+        AddPoint(a.x, a.y)
+        AddPoint(b.x, b.y)
+    }
+}
+
+data class LinearRing(val points: List<Point>) : Geometry(wkbLinearRing) {
+
+    init {
+        points.forEach {
+            AddPoint(it.x, it.y)
+            AddPoint(it.x, it.y)
+        }
+    }
+
+    val segments
+        get() = points.zipWithNext { a, b -> Segment(a, b) }
+
+    val isInterior
+        get() = segments.sumByDouble { (a, b) -> (b.x - a.x) * (b.y + a.y) } > 0
+}
+
+data class Polygon(val linearRings: List<LinearRing>) : Geometry(wkbPolygon) {
+    init {
+        linearRings.forEach {
+            AddGeometry(it)
+        }
+    }
+}
+
+data class MultiPolygon(val polygons: List<Polygon>) : Geometry(wkbMultiPolygon) {
+    init {
+        polygons.forEach {
+            AddGeometry(it)
+        }
+    }
+}
 
 /**
  * Marching Squares implementation that outputs polygons.
@@ -92,7 +142,7 @@ internal class MarchingSquares(
      * @param levels a list of isovalues
      * @return a list of lists of polygons (i.e. layers of multipolygons)
      */
-    suspend fun contour(levels: DoubleArray): List<List<Polygon>> =
+    suspend fun contour(levels: DoubleArray): List<MultiPolygon> =
         coroutineScope {
             levels.map { level ->
                 async {
@@ -108,8 +158,8 @@ internal class MarchingSquares(
                     var backwardLine: ArrayList<Point>
                     while (true) {
                         segment = adjacencyMap.firstSegment() ?: break
-                        forward = segment.end
-                        backward = segment.start
+                        forward = segment.b
+                        backward = segment.a
                         forwardLine = arrayListOf(forward)
                         backwardLine = arrayListOf(backward)
 
@@ -132,10 +182,10 @@ internal class MarchingSquares(
                     val attachedInteriorIndices = mutableSetOf<Int>()
                     var polygon: Polygon
                     for (exterior in exteriors) {
-                        polygon = Polygon(exterior)
+                        polygon = Polygon(listOf(exterior))
                         for (i in unattachedInteriorIndices) {
-                            if (polygon.contains(interiors[i])) {
-                                polygon.interiorRings.add(interiors[i])
+                            if (polygon.Contains(interiors[i])) {
+                                polygon.AddGeometry(interiors[i])
                                 attachedInteriorIndices.add(i)
                             }
                         }
@@ -143,7 +193,7 @@ internal class MarchingSquares(
                         levelPolygons.add(polygon)
                     }
 
-                    levelPolygons
+                    MultiPolygon(levelPolygons)
                 }
             }.awaitAll()
         }
