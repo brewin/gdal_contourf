@@ -52,10 +52,20 @@ internal data class Polygon(
     val interiorRings: ArrayList<LinearRing> = arrayListOf()
 ) {
 
-    operator fun contains(point: Point) =
-        exteriorRing.segments.count { it.contains(point) } % 2 != 0
+    operator fun contains(point: Point): Boolean {
+        exteriorRing.segments.forEach {
+            if (it.contains(point)) return true
+        }
+        return false
+    }
 
-    // Assumes all points in ring are contained if one is., which should be good enough.
-    operator fun contains(ring: LinearRing) =
-        contains(ring.segments.first().start)
+    // Brute force. Probably very slow.
+    operator fun contains(ring: LinearRing): Boolean {
+        exteriorRing.segments.forEach { segment ->
+            ring.points.forEach { point ->
+                if (segment.contains(point)) return true
+            }
+        }
+        return false
+    }
 }
