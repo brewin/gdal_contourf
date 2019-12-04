@@ -135,7 +135,7 @@ internal class MarchingSquares(
                         polygon = Polygon(exterior)
                         for (i in unattachedInteriorIndices) {
                             if (interiors[i].Within(exterior)) {
-                                polygon.addInteriorRing(interiors[i])
+                                polygon.Union(interiors[i])
                                 attachedInteriorIndices.add(i)
                             }
                         }

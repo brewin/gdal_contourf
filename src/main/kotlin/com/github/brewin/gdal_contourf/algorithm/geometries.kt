@@ -37,10 +37,6 @@ data class Polygon(val exteriorRing: LinearRing) : Geometry(ogrConstants.wkbPoly
     init {
         AddGeometry(exteriorRing)
     }
-
-    fun addInteriorRing(interiorRing: LinearRing) {
-        AddGeometry(interiorRing)
-    }
 }
 
 data class MultiPolygon(val polygons: List<Polygon>) : Geometry(ogrConstants.wkbMultiPolygon) {
