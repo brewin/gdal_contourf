@@ -92,7 +92,7 @@ internal class MarchingSquares(
      * @param levels a list of isovalues
      * @return a list of lists of polygons (i.e. layers of multipolygons)
      */
-    suspend fun contour(levels: DoubleArray): List<MultiPolygon> =
+    suspend fun contour(levels: DoubleArray): List<GeometryCollection> =
         coroutineScope {
             levels.map { level ->
                 async {
@@ -135,7 +135,7 @@ internal class MarchingSquares(
                         polygon = Polygon(exterior)
                         for (i in unattachedInteriorIndices) {
                             if (interiors[i].Within(exterior)) {
-                                polygon.Union(interiors[i])
+                                polygon.AddGeometry(interiors[i])
                                 attachedInteriorIndices.add(i)
                             }
                         }
@@ -143,7 +143,7 @@ internal class MarchingSquares(
                         polygons.add(polygon)
                     }
 
-                    MultiPolygon(polygons)
+                    GeometryCollection(polygons)
                 }
             }.awaitAll()
         }
