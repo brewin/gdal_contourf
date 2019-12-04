@@ -1,13 +1,16 @@
 package com.github.brewin.gdal_contourf
 
 import com.github.brewin.gdal_contourf.algorithm.MarchingSquares
-import com.github.brewin.gdal_contourf.algorithm.Polygon
 import kotlinx.coroutines.runBlocking
 import org.gdal.gdal.Dataset
 import org.gdal.gdal.TranslateOptions
 import org.gdal.gdal.gdal
-import org.gdal.ogr.*
-import org.gdal.ogr.ogrConstants.*
+import org.gdal.ogr.DataSource
+import org.gdal.ogr.Feature
+import org.gdal.ogr.FieldDefn
+import org.gdal.ogr.ogr
+import org.gdal.ogr.ogrConstants.OFTReal
+import org.gdal.ogr.ogrConstants.wkbMultiPolygon
 import org.gdal.osr.SpatialReference
 import java.util.*
 import kotlin.system.exitProcess
@@ -19,29 +22,6 @@ object GdalContourF {
         gdal.UseExceptions()
         ogr.RegisterAll()
         ogr.UseExceptions()
-    }
-
-    private fun createOgrGeometryCollection(polygons: List<Polygon>): Geometry {
-        val geometryCollection = Geometry(wkbGeometryCollection)
-        for ((exterior, interiors) in polygons) {
-            val exteriorRing = Geometry(wkbLinearRing)
-            val polygon = Geometry(wkbPolygon)
-            for (point in exterior.points) {
-                exteriorRing.AddPoint_2D(point.x, point.y)
-            }
-            polygon.AddGeometry(exteriorRing)
-            for (interior in interiors) {
-                val interiorRing = Geometry(wkbLinearRing)
-                for (point in interior.points) {
-                    interiorRing.AddPoint_2D(point.x, point.y)
-                }
-                polygon.AddGeometry(interiorRing)
-            }
-            if (!polygon.IsEmpty()) {
-                geometryCollection.AddGeometry(polygon)
-            }
-        }
-        return geometryCollection
     }
 
     private suspend fun process(
@@ -59,17 +39,15 @@ object GdalContourF {
 
         MarchingSquares(grid, geoTransform)
             .contour(levels.toDoubleArray())
-            .forEachIndexed { i, levelPolygons ->
-                println("OGR-ifying level ${levels[i]}...")
-                val levelGeometryCollection = createOgrGeometryCollection(levelPolygons)
-                if (!levelGeometryCollection.IsEmpty()) {
-                    val feature = Feature(layer.GetLayerDefn())
+            .forEachIndexed { i, levelMultiPolygon ->
+                if (!levelMultiPolygon.IsEmpty()) {
+                    Feature(layer.GetLayerDefn())
                         .apply {
-                            SetGeometry(levelGeometryCollection)
+                            SetGeometry(levelMultiPolygon)
                             SetField(featureName, levels[i])
+                            layer.CreateFeature(this)
+                            delete()
                         }
-                    layer.CreateFeature(feature)
-                    feature.delete()
                 }
             }
 

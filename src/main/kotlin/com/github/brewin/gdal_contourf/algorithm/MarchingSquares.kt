@@ -92,7 +92,7 @@ internal class MarchingSquares(
      * @param levels a list of isovalues
      * @return a list of lists of polygons (i.e. layers of multipolygons)
      */
-    suspend fun contour(levels: DoubleArray): List<List<Polygon>> =
+    suspend fun contour(levels: DoubleArray): List<MultiPolygon> =
         coroutineScope {
             levels.map { level ->
                 async {
@@ -126,7 +126,7 @@ internal class MarchingSquares(
                     }
 
                     // Attach interior rings (holes) to their exteriors to create polygons.
-                    val levelPolygons = arrayListOf<Polygon>()
+                    val polygons = mutableListOf<Polygon>()
                     val (interiors, exteriors) = rings.partition(LinearRing::isInterior)
                     val unattachedInteriorIndices = interiors.indices.toMutableSet()
                     val attachedInteriorIndices = mutableSetOf<Int>()
@@ -134,16 +134,16 @@ internal class MarchingSquares(
                     for (exterior in exteriors) {
                         polygon = Polygon(exterior)
                         for (i in unattachedInteriorIndices) {
-                            if (polygon.contains(interiors[i])) {
-                                polygon.interiorRings.add(interiors[i])
+                            if (interiors[i].Within(exterior)) {
+                                polygon.addInteriorRing(interiors[i])
                                 attachedInteriorIndices.add(i)
                             }
                         }
                         unattachedInteriorIndices.removeAll(attachedInteriorIndices)
-                        levelPolygons.add(polygon)
+                        polygons.add(polygon)
                     }
 
-                    levelPolygons
+                    MultiPolygon(polygons)
                 }
             }.awaitAll()
         }
