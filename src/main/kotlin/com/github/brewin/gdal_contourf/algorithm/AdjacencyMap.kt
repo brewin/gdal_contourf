@@ -26,7 +26,7 @@ internal class AdjacencyMap {
         if (mapEndToStart.containsKey(end)) {
             val entry = mapEndToStart[end]
             val i = entry!![0]
-            start = segments[i]!!.a
+            start = segments[i]!!.start
             removeSegmentAt(i)
         }
 
@@ -40,7 +40,7 @@ internal class AdjacencyMap {
         if (mapStartToEnd.containsKey(start)) {
             val entry = mapStartToEnd[start]
             val i = entry!![0]
-            end = segments[i]!!.b
+            end = segments[i]!!.end
             removeSegmentAt(i)
         }
 
@@ -65,8 +65,8 @@ internal class AdjacencyMap {
     private fun removeSegmentAt(i: Int) {
         val segment = segments[i]
 
-        val start = segment!!.a
-        val end = segment.b
+        val start = segment!!.start
+        val end = segment.end
 
         var entry = mapStartToEnd[start]
         entry!!.remove(i)
