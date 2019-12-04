@@ -4,13 +4,13 @@ plugins {
     //application
     `java-library`
     maven
-    kotlin("jvm") version "1.3.60"
+    kotlin("jvm") version "1.3.61"
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("com.github.ben-manes.versions") version "0.27.0"
 }
 
 group = "com.github.brewin"
-version = "1.0.4"
+version = "1.0.5"
 
 repositories {
     jcenter()

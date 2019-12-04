@@ -21,8 +21,8 @@ object GdalContourF {
         ogr.UseExceptions()
     }
 
-    private fun polygonsToOgrMultiPolygon(polygons: List<Polygon>): Geometry {
-        val multiPolygon = Geometry(wkbMultiPolygon)
+    private fun createOgrGeometryCollection(polygons: List<Polygon>): Geometry {
+        val geometryCollection = Geometry(wkbGeometryCollection)
         for ((exterior, interiors) in polygons) {
             val exteriorRing = Geometry(wkbLinearRing)
             val polygon = Geometry(wkbPolygon)
@@ -38,10 +38,10 @@ object GdalContourF {
                 polygon.AddGeometry(interiorRing)
             }
             if (!polygon.IsEmpty()) {
-                multiPolygon.AddGeometry(polygon)
+                geometryCollection.AddGeometry(polygon)
             }
         }
-        return multiPolygon
+        return geometryCollection
     }
 
     private suspend fun process(
@@ -61,11 +61,11 @@ object GdalContourF {
             .contour(levels.toDoubleArray())
             .forEachIndexed { i, levelPolygons ->
                 println("OGR-ifying level ${levels[i]}...")
-                val levelMultiPolygon = polygonsToOgrMultiPolygon(levelPolygons)
-                if (!levelMultiPolygon.IsEmpty()) {
+                val levelGeometryCollection = createOgrGeometryCollection(levelPolygons)
+                if (!levelGeometryCollection.IsEmpty()) {
                     val feature = Feature(layer.GetLayerDefn())
                         .apply {
-                            SetGeometry(levelMultiPolygon)
+                            SetGeometry(levelGeometryCollection)
                             SetField(featureName, levels[i])
                         }
                     layer.CreateFeature(feature)
