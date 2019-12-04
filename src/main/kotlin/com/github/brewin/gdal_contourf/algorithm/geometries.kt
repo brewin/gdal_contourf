@@ -6,22 +6,22 @@ import org.gdal.ogr.ogrConstants
 data class Point(val x: Double, val y: Double) : Geometry(ogrConstants.wkbPoint) {
 
     init {
-        AddPoint(x, y)
+        AddPoint_2D(x, y)
     }
 }
 
 data class Segment(val start: Point, val end: Point) : Geometry(ogrConstants.wkbLineString) {
 
     init {
-        AddPoint(start.x, start.y)
-        AddPoint(end.x, end.y)
+        AddPoint_2D(start.x, start.y)
+        AddPoint_2D(end.x, end.y)
     }
 }
 
 data class LinearRing(val points: List<Point>) : Geometry(ogrConstants.wkbLinearRing) {
 
     init {
-        segments.forEach { AddGeometry(it) }
+        points.forEach { AddPoint_2D(it.x, it.y) }
     }
 
     val segments
