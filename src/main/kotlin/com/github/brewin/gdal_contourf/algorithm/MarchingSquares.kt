@@ -130,6 +130,7 @@ internal class MarchingSquares(
                     val (interiors, exteriors) = rings.partition(LinearRing::isInterior)
                     MultiPolygon(exteriors.map(::Polygon))
                         .Difference(MultiPolygon(interiors.map(::Polygon)))
+                        .UnionCascaded()
                 }
             }.awaitAll()
         }
