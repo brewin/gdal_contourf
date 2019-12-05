@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    //application
+    application
     `java-library`
     maven
     kotlin("jvm") version "1.3.61"
@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "com.github.brewin"
-version = "1.0.12"
+version = "1.0.13"
 
 repositories {
     jcenter()
@@ -27,9 +27,9 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-//application {
-//    mainClassName = "com.github.brewin.gdal_contourf.GdalContourF"
-//}
+application {
+    mainClassName = "com.github.brewin.gdal_contourf.GdalContourF"
+}
 
 /*tasks.withType<ShadowJar> {
     baseName = "gdal_contourf"

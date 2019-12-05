@@ -3,6 +3,7 @@ package com.github.brewin.gdal_contourf.algorithm
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import org.gdal.ogr.Geometry
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -92,7 +93,7 @@ internal class MarchingSquares(
      * @param levels a list of isovalues
      * @return a list of lists of polygons (i.e. layers of multipolygons)
      */
-    suspend fun contour(levels: DoubleArray): List<GeometryCollection> =
+    suspend fun contour(levels: DoubleArray): List<Geometry> =
         coroutineScope {
             levels.map { level ->
                 async {
@@ -126,7 +127,7 @@ internal class MarchingSquares(
                     }
 
                     // Attach interior rings (holes) to their exteriors to create polygons.
-                    val polygons = mutableListOf<Polygon>()
+                    /*val polygons = mutableListOf<Polygon>()
                     val (interiors, exteriors) = rings.partition(LinearRing::isInterior)
                     val unattachedInteriorIndices = interiors.indices.toMutableSet()
                     val attachedInteriorIndices = mutableSetOf<Int>()
@@ -134,7 +135,7 @@ internal class MarchingSquares(
                     for (exterior in exteriors) {
                         polygon = Polygon(exterior)
                         for (i in unattachedInteriorIndices) {
-                            if (interiors[i].Within(exterior)) {
+                            if (exterior.Contains(interiors[i])) {
                                 polygon.AddGeometry(interiors[i])
                                 attachedInteriorIndices.add(i)
                             }
@@ -143,7 +144,13 @@ internal class MarchingSquares(
                         polygons.add(polygon)
                     }
 
-                    GeometryCollection(polygons)
+                    GeometryCollection(polygons)*/
+
+                    rings.reduce<Geometry, Geometry> { union, linearRing ->
+                        union.Union(linearRing)
+                    }.also {
+                        println(it.GetGeometryName())
+                    }
                 }
             }.awaitAll()
         }
