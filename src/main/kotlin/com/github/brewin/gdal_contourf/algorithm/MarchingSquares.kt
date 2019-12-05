@@ -127,7 +127,7 @@ internal class MarchingSquares(
                     }
 
                     // Attach interior rings (holes) to their exteriors to create polygons.
-                    /*val polygons = mutableListOf<Polygon>()
+                    val polygons = mutableListOf<Polygon>()
                     val (interiors, exteriors) = rings.partition(LinearRing::isInterior)
                     val unattachedInteriorIndices = interiors.indices.toMutableSet()
                     val attachedInteriorIndices = mutableSetOf<Int>()
@@ -137,20 +137,18 @@ internal class MarchingSquares(
                         for (i in unattachedInteriorIndices) {
                             if (exterior.Contains(interiors[i])) {
                                 polygon.AddGeometry(interiors[i])
-                                attachedInteriorIndices.add(i)
+                                if (polygon.IsValid()) {
+                                    attachedInteriorIndices.add(i)
+                                } else {
+                                    polygon.RemoveGeometry(polygon.GetGeometryCount() - 1)
+                                }
                             }
                         }
                         unattachedInteriorIndices.removeAll(attachedInteriorIndices)
                         polygons.add(polygon)
                     }
 
-                    GeometryCollection(polygons)*/
-
-                    rings.reduce<Geometry, Geometry> { union, linearRing ->
-                        union.Union(linearRing)
-                    }.also {
-                        println(it.GetGeometryName())
-                    }
+                    GeometryCollection(polygons)
                 }
             }.awaitAll()
         }
