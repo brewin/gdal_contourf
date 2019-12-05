@@ -9,7 +9,8 @@ import org.gdal.ogr.DataSource
 import org.gdal.ogr.Feature
 import org.gdal.ogr.FieldDefn
 import org.gdal.ogr.ogr
-import org.gdal.ogr.ogrConstants.*
+import org.gdal.ogr.ogrConstants.OFTReal
+import org.gdal.ogr.ogrConstants.wkbMultiPolygon
 import org.gdal.osr.SpatialReference
 import java.util.*
 import kotlin.system.exitProcess
@@ -33,7 +34,7 @@ object GdalContourF {
         val featureName = "level"
 
         val outDataSource = ogr.GetDriverByName("Memory").CreateDataSource("")
-        val layer = outDataSource.CreateLayer(layerName, outSrs, wkbGeometryCollection)
+        val layer = outDataSource.CreateLayer(layerName, outSrs, wkbMultiPolygon)
             .apply { CreateField(FieldDefn(featureName, OFTReal)) }
 
         MarchingSquares(grid, geoTransform)
@@ -42,7 +43,7 @@ object GdalContourF {
                 if (!levelGeometry.IsEmpty()) {
                     Feature(layer.GetLayerDefn())
                         .apply {
-                            SetGeometry(levelGeometry)
+                            SetGeometry(levelGeometry.Union(levelGeometry))
                             SetField(featureName, levels[i])
                             layer.CreateFeature(this)
                             delete()
