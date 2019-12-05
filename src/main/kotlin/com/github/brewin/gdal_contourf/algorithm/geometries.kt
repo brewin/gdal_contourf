@@ -47,3 +47,12 @@ data class MultiPolygon(
         polygons.forEach { AddGeometry(it) }
     }
 }
+
+data class GeometryCollection(
+    val geometries: List<Geometry>
+) : Geometry(ogrConstants.wkbMultiPolygon) {
+
+    init {
+        geometries.forEach { AddGeometry(it) }
+    }
+}

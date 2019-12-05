@@ -128,8 +128,8 @@ internal class MarchingSquares(
 
                     // Attach interior rings (holes) to their exteriors to create polygons.
                     val (interiors, exteriors) = rings.partition(LinearRing::isInterior)
-                    MultiPolygon(exteriors.map(::Polygon))
-                        .Difference(MultiPolygon(interiors.map(::Polygon)))
+                    GeometryCollection(exteriors.map(::Polygon))
+                        .Difference(GeometryCollection(interiors.map(::Polygon)))
                         .UnionCascaded()
                 }
             }.awaitAll()
