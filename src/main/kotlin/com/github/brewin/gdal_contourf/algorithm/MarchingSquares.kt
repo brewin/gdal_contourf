@@ -130,7 +130,8 @@ internal class MarchingSquares(
                     val (interiors, exteriors) = rings.partition(LinearRing::isInterior)
                     GeometryCollection(exteriors.map(::Polygon))
                         .Difference(GeometryCollection(interiors.map(::Polygon)))
-                        .UnionCascaded()
+                        ?.UnionCascaded()
+                        ?: GeometryCollection(emptyList())
                 }
             }.awaitAll()
         }
