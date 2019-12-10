@@ -7,6 +7,7 @@ import org.gdal.ogr.Geometry
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.round
 
 /**
  * Marching Squares implementation that outputs polygons.
@@ -25,7 +26,6 @@ internal class MarchingSquares(
 ) {
 
     private val paddedGrid = pad(grid)
-    private val epsilon = 10e-6
 
     // Line segments with points in CCW polygon order
     private val segmentTable = arrayOf(
@@ -204,9 +204,9 @@ internal class MarchingSquares(
         valueA: Double,
         valueB: Double
     ): Point {
-        if (abs(level - valueA) < epsilon) return pointA
-        if (abs(level - valueB) < epsilon) return pointB
-        if (abs(valueA - valueB) < epsilon) return pointA
+        if (abs(level - valueA) < EPSILON) return pointA
+        if (abs(level - valueB) < EPSILON) return pointB
+        if (abs(valueA - valueB) < EPSILON) return pointA
 
         val mu = (level - valueA) / (valueB - valueA)
         return Point(
@@ -217,10 +217,14 @@ internal class MarchingSquares(
 
     private fun gridPositionToLonLat(position: Point) =
         Point(
-            geoTransform[0] + (position.x + 0.5) * geoTransform[1] +
-                    (position.y + 0.5) * geoTransform[2],
-            geoTransform[3] + (position.x + 0.5) * geoTransform[4] +
-                    (position.y + 0.5) * geoTransform[5]
+            round(
+                (geoTransform[0] + (position.x + 0.5) *
+                        geoTransform[1] + (position.y + 0.5) * geoTransform[2]) / EPSILON
+            ) * EPSILON,
+            round(
+                (geoTransform[3] + (position.x + 0.5) * geoTransform[4] +
+                        (position.y + 0.5) * geoTransform[5]) / EPSILON
+            ) * EPSILON
         )
 
     // Surround the data with extremely low values, forcing lines that exit sides to form
@@ -235,4 +239,10 @@ internal class MarchingSquares(
                 }
             }
         }
+
+    companion object {
+        // 6 decimal places should be enough for coordinates.
+        // https://en.wikipedia.org/wiki/Decimal_degrees
+        private const val EPSILON = 0.000001
+    }
 }
