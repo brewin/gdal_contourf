@@ -29,12 +29,12 @@ It can be used as a library with Gradle:
         }
     }
     dependencies {
-        implementation 'com.github.brewin:gdal_contourf:1.0.1'
+        implementation 'com.github.brewin:gdal_contourf:1.0.19'
     }
     
 Or run from the command line:
 
-    java -jar gdal_contourf-1.0.1-all.jar --in input.tif --band 1 \
+    java -jar gdal_contourf-1.0.19-all.jar --in input.tif --band 1 \
         --levels 0 50 100 150 --simplification 30 --epsg 4326 \
         --format GeoJSON --out output.geojson
         

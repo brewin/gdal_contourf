@@ -218,8 +218,8 @@ internal class MarchingSquares(
     private fun gridPositionToLonLat(position: Point) =
         Point(
             round(
-                (geoTransform[0] + (position.x + 0.5) *
-                        geoTransform[1] + (position.y + 0.5) * geoTransform[2]) / EPSILON
+                (geoTransform[0] + (position.x + 0.5) * geoTransform[1] +
+                        (position.y + 0.5) * geoTransform[2]) / EPSILON
             ) * EPSILON,
             round(
                 (geoTransform[3] + (position.x + 0.5) * geoTransform[4] +
