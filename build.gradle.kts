@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "com.github.brewin"
-version = "1.0.19"
+version = "1.1.0"
 
 repositories {
     jcenter()
@@ -19,8 +19,8 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.2-1.3.60")
-    api("org.gdal:gdal:2.4.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
+    api("org.gdal:gdal:3.0.0")
 }
 
 tasks.withType<KotlinCompile> {

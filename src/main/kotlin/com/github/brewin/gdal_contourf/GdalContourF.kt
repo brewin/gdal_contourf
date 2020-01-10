@@ -1,16 +1,14 @@
 package com.github.brewin.gdal_contourf
 
-import com.github.brewin.gdal_contourf.algorithm.MarchingSquares
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import org.gdal.gdal.Dataset
 import org.gdal.gdal.TranslateOptions
 import org.gdal.gdal.gdal
-import org.gdal.ogr.DataSource
-import org.gdal.ogr.Feature
-import org.gdal.ogr.FieldDefn
-import org.gdal.ogr.ogr
-import org.gdal.ogr.ogrConstants.OFTReal
-import org.gdal.ogr.ogrConstants.wkbGeometryCollection
+import org.gdal.ogr.*
+import org.gdal.ogr.ogrConstants.*
 import org.gdal.osr.SpatialReference
 import java.util.*
 import kotlin.system.exitProcess
@@ -23,6 +21,14 @@ object GdalContourF {
         ogr.RegisterAll()
         ogr.UseExceptions()
     }
+
+    private fun gridPointToLonLat(geoTransform: DoubleArray, point: Pair<Double, Double>) =
+        Pair(
+            geoTransform[1] * point.first + geoTransform[2] * point.second +
+                    geoTransform[1] * 0.5 + geoTransform[2] * 0.5 + geoTransform[0],
+            geoTransform[4] * point.first + geoTransform[5] * point.second +
+                    geoTransform[4] * 0.5 + geoTransform[5] * 0.5 + geoTransform[3]
+        )
 
     private suspend fun process(
         grid: Array<DoubleArray>,
@@ -37,17 +43,74 @@ object GdalContourF {
         val layer = outDataSource.CreateLayer(layerName, outSrs, wkbGeometryCollection)
             .apply { CreateField(FieldDefn(featureName, OFTReal)) }
 
-        MarchingSquares(grid, geoTransform)
-            .contour(levels.toDoubleArray())
-            .forEachIndexed { i, levelGeometry ->
-                if (!levelGeometry.IsEmpty()) {
-                    Feature(layer.GetLayerDefn())
+        MarchingSquares(grid)
+            .contourRings(levels, true)
+            .map { levelRings ->
+                GlobalScope.async {
+                    levelRings.partition {
+                        // Separate exterior rings and interior rings using the shoelace formula.
+                        // https://en.wikipedia.org/wiki/Shoelace_formula
+                        it.zipWithNext().sumByDouble { (v0, v1) ->
+                            (v1.first - v0.first) * (v1.second + v0.second)
+                        } > 0
+                    }
+                }
+            }.awaitAll().map { (exteriorRings, interiorRings) ->
+                GlobalScope.async {
+                    // Convert exterior and interior rings into a multipolygon with holes.
+                    val exteriorMultipolygon = Geometry(wkbMultiPolygon)
                         .apply {
-                            SetGeometry(levelGeometry)
-                            SetField(featureName, levels[i])
-                            layer.CreateFeature(this)
-                            delete()
-                        }
+                            exteriorRings.forEach { exteriorRing ->
+                                AddGeometry(
+                                    Geometry(wkbPolygon).apply {
+                                        AddGeometry(
+                                            Geometry(wkbLinearRing).apply {
+                                                exteriorRing.forEach { gridPoint ->
+                                                    gridPointToLonLat(geoTransform, gridPoint).let {
+                                                        AddPoint_2D(it.first, it.second)
+                                                    }
+                                                }
+                                            }
+                                        )
+                                    }
+                                )
+                            }
+                        }.Buffer(0.0)
+                    val interiorMultipolygon = Geometry(wkbMultiPolygon)
+                        .apply {
+                            interiorRings.forEach { interiorRing ->
+                                AddGeometry(
+                                    Geometry(wkbPolygon).apply {
+                                        AddGeometry(
+                                            Geometry(wkbLinearRing).apply {
+                                                interiorRing.forEach { gridPoint ->
+                                                    gridPointToLonLat(geoTransform, gridPoint).let {
+                                                        AddPoint_2D(it.first, it.second)
+                                                    }
+                                                }
+                                            }
+                                        )
+                                    }
+                                )
+                            }
+                        }.Buffer(0.0)
+
+                    //println(exteriorMultipolygon.IsValid())
+                    //println(interiorMultipolygon.IsValid())
+
+                    // Merge exteriors and interiors.
+                    // FIXME: Might need to use SymDifference here to avoid TopologyException
+                    exteriorMultipolygon.Difference(interiorMultipolygon)
+                }
+            }.awaitAll().forEachIndexed { i, levelMultipolygon ->
+                // Create feature in layer for each level multipolygon.
+                if (!levelMultipolygon.IsEmpty()) {
+                    Feature(layer.GetLayerDefn()).apply {
+                        SetGeometry(levelMultipolygon)
+                        SetField(featureName, levels[i])
+                        layer.CreateFeature(this)
+                        delete()
+                    }
                 }
             }
 
