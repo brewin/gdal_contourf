@@ -131,10 +131,9 @@ class MarchingSquares(grid: Array<DoubleArray>) {
 
     // Connect edges into linear rings where the last vertex is the same as the first.
     private fun <T> connectRings(edgeMap: Map<Vertex<T>, Vertex<T>>): Set<List<Vertex<T>>> {
-        tailrec fun connect(vertices: List<Vertex<T>>, count: Int = 1): List<Vertex<T>> = when {
-            count > edgeMap.size -> error("Failed to find edge key matching vertex: ${vertices.last()}")
+        tailrec fun connect(vertices: List<Vertex<T>>): List<Vertex<T>> = when {
             vertices.size > 2 && vertices.last() == vertices.first() -> vertices
-            else -> connect(vertices + edgeMap.getValue(vertices.last()), count + 1)
+            else -> connect(vertices + edgeMap.getValue(vertices.last()))
         }
 
         val unconnected = edgeMap.keys.toMutableSet()
