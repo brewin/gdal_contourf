@@ -75,7 +75,7 @@ object GdalContourF {
                                     }
                                 )
                             }
-                        }.Buffer(0.0)
+                        }.Buffer(0.0) // Clean geometry
                     val interiorMultipolygon = Geometry(wkbMultiPolygon)
                         .apply {
                             interiorRings.forEach { interiorRing ->
@@ -93,7 +93,7 @@ object GdalContourF {
                                     }
                                 )
                             }
-                        }.Buffer(0.0)
+                        }.Buffer(0.0) // Clean geometry
 
                     //println(exteriorMultipolygon.IsValid())
                     //println(interiorMultipolygon.IsValid())

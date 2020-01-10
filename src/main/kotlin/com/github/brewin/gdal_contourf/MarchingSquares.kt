@@ -17,19 +17,19 @@ private typealias Edge<T> = Pair<Vertex<T>, Vertex<T>>
  */
 class MarchingSquares(grid: Array<DoubleArray>) {
 
-    private val rowSize = grid.size
-    private val colSize = grid.first().size
+    private val colSize = grid.size
+    private val rowSize = grid.first().size
 
     // TODO: This is simple and works well enough for large grids. Grid side values are lost though,
     //  which isn't ideal especially for very small grids.
     // Replace the first and last columns and rows with extremely low values, forcing lines that
     // exit sides to form closed rings.
     private val closedGrid by lazy {
-        Array(rowSize) { row ->
-            DoubleArray(colSize) { col ->
-                if (row == 0 || col == 0 || row == rowSize - 1 || col == colSize - 1)
+        Array(colSize) { col ->
+            DoubleArray(rowSize) { row ->
+                if (col == 0 || row == 0 || col == colSize - 1 || row == rowSize - 1)
                     -Double.MAX_VALUE
-                else grid[row][col]
+                else grid[col][row]
             }
         }
     }
@@ -56,9 +56,9 @@ class MarchingSquares(grid: Array<DoubleArray>) {
         smooth: Boolean
     ): Map<Vertex<Double>, Vertex<Double>> =
         withContext(Dispatchers.Default) {
-            (0 until rowSize - 1).flatMap { row ->
-                (0 until colSize - 1).flatMap { col ->
-                    edges(row, col, level, smooth)
+            (0 until colSize - 1).flatMap { col ->
+                (0 until rowSize - 1).flatMap { row ->
+                    edges(col, row, level, smooth)
                 }
             }.toMap()
         }
@@ -69,11 +69,11 @@ class MarchingSquares(grid: Array<DoubleArray>) {
         else ((level - a) / (b - a)).coerceIn(EPSILON, 1 - EPSILON)
 
     // Compute contour edges that can later be connected into linear rings.
-    private fun edges(row: Int, col: Int, level: Double, smooth: Boolean): Set<Edge<Double>> {
-        val tl = closedGrid[row][col]
-        val tr = closedGrid[row][col + 1]
-        val br = closedGrid[row + 1][col + 1]
-        val bl = closedGrid[row + 1][col]
+    private fun edges(col: Int, row: Int, level: Double, smooth: Boolean): Set<Edge<Double>> {
+        val tl = closedGrid[col][row]
+        val tr = closedGrid[col + 1][row]
+        val br = closedGrid[col + 1][row + 1]
+        val bl = closedGrid[col][row + 1]
 
         // Lazily compute side crossing points.
         val top by lazy {
