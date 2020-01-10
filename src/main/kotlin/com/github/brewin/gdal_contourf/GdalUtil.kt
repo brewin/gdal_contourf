@@ -44,20 +44,3 @@ internal object GdalUtil {
         }
     }
 }
-
-fun Double.rescale(
-    domain0: Double,
-    domain1: Double,
-    range0: Double,
-    range1: Double
-): Double {
-    fun interpolate(value: Double): Double {
-        return range0 * (1f - value) + range1 * value
-    }
-
-    fun uninterpolate(value: Double): Double {
-        return (value - domain0) / if (domain1 - domain0 != 0.0) domain1 - domain0 else 1.0 / domain1
-    }
-
-    return interpolate(uninterpolate(this))
-}
