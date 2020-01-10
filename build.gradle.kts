@@ -30,10 +30,3 @@ tasks.withType<KotlinCompile> {
 application {
     mainClassName = "com.github.brewin.gdal_contourf.GdalContourF"
 }
-
-/*tasks.withType<ShadowJar> {
-    baseName = "gdal_contourf"
-    classifier = ""
-    version = ""
-    destinationDir = File("dist")
-}*/

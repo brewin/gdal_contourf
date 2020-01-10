@@ -47,13 +47,7 @@ object GdalContourF {
             .contourRings(levels, true)
             .map { levelRings ->
                 GlobalScope.async {
-                    levelRings.partition {
-                        // Separate exterior rings and interior rings using the shoelace formula.
-                        // https://en.wikipedia.org/wiki/Shoelace_formula
-                        it.zipWithNext().sumByDouble { (v0, v1) ->
-                            (v1.first - v0.first) * (v1.second + v0.second)
-                        } > 0
-                    }
+                    MarchingSquares.partitionExteriorInterior(levelRings)
                 }
             }.awaitAll().map { (exteriorRings, interiorRings) ->
                 GlobalScope.async {
@@ -75,7 +69,8 @@ object GdalContourF {
                                     }
                                 )
                             }
-                        }.Buffer(0.0) // Clean geometry
+                        }//.Buffer(0.0) // Clean geometry. FIXME: Not sure this is needed.
+
                     val interiorMultipolygon = Geometry(wkbMultiPolygon)
                         .apply {
                             interiorRings.forEach { interiorRing ->
@@ -93,13 +88,14 @@ object GdalContourF {
                                     }
                                 )
                             }
-                        }.Buffer(0.0) // Clean geometry
+                        }//.Buffer(0.0) // Clean geometry. FIXME: Not sure this is needed.
 
                     //println(exteriorMultipolygon.IsValid())
                     //println(interiorMultipolygon.IsValid())
 
+                    // FIXME: Theoretically, this should work. But precision issues could cause
+                    //  problems. Might need to use SymDifference here to avoid TopologyException.
                     // Merge exteriors and interiors.
-                    // FIXME: Might need to use SymDifference here to avoid TopologyException
                     exteriorMultipolygon.Difference(interiorMultipolygon)
                 }
             }.awaitAll().forEachIndexed { i, levelMultipolygon ->
@@ -126,8 +122,7 @@ object GdalContourF {
     ): DataSource {
         require(simplification in 0..99) { "Error: simplification must be between 0 and 99" }
 
-        val outSrs = SpatialReference()
-            .apply { ImportFromEPSG(outputEpsgId) }
+        val outSrs = SpatialReference().apply { ImportFromEPSG(outputEpsgId) }
         val translateArgs = "-of VRT -r cubicspline -outsize ${100 - simplification}% 0"
         val reprojectedDataset = gdal.Translate(
             "/vsimem/reprojected.vrt",
