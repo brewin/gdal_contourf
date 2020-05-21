@@ -15,7 +15,7 @@ polygons using the -p option, but it is very slow.
 - GDAL Java bindings (libgdal-java on Debian/Ubuntu, gdal-java on Fedora/Centos)
 
 #### Building
-Make sure the GDAL version in build.gradle.kts matches the system version. (ie. 3.1.0)
+Make sure the GDAL version in build.gradle.kts matches the system version. (ie. 3.0.0)
 
     ./gradlew shadowJar
 
@@ -32,7 +32,7 @@ It can be used as a library with Gradle:
     
 Or run from the command line:
 
-    java -jar gdal_contourf-1.1.2-all.jar --in input.tif --band 1 \
+    java -jar gdal_contourf-1.1.2_gdal-3.0.0.jar --in input.tif --band 1 \
         --levels -50 0 50 100 150 --simplification 30 --epsg 4326 \
         --format GeoJSON --out output.geojson
         
